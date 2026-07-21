@@ -1,0 +1,62 @@
+<?xml version="1.0" ?>
+<!-- Minimal headless camera world for vision tests: loads instantly (no Fuel downloads),
+     streams H.264 to udp:127.0.0.1:5600 via GstCameraPlugin. A red box sits ~3 m in front of
+     the camera so a multimodal model has something to identify. Enable streaming after launch:
+       gz topic -t /camera/enable_streaming -m gz.msgs.Boolean -p "data: 1"
+     then run the agent with AGENT_CAMERA=gazebo. See SKILL.md for the full recipe. -->
+<sdf version="1.9">
+  <world name="cam">
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.004</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+
+    <light type="directional" name="sun">
+      <cast_shadows>false</cast_shadows>
+      <direction>-0.3 0.2 -0.9</direction>
+      <diffuse>1 1 1 1</diffuse>
+      <specular>0.3 0.3 0.3 1</specular>
+    </light>
+
+    <!-- a bright target box ~3 m in front of the camera (camera looks +X) -->
+    <model name="target">
+      <static>true</static>
+      <pose>3 0 0.5 0 0 0</pose>
+      <link name="l">
+        <visual name="v">
+          <geometry><box><size>0.6 0.6 0.6</size></box></geometry>
+          <material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- camera looking +X at the target, streaming H.264 to udp:5600 -->
+    <model name="cam">
+      <static>true</static>
+      <pose>0 0 0.5 0 0 0</pose>
+      <link name="link">
+        <sensor name="camera" type="camera">
+          <update_rate>15</update_rate>
+          <topic>/camera</topic>
+          <camera>
+            <horizontal_fov>1.2</horizontal_fov>
+            <image><width>640</width><height>480</height></image>
+            <clip><near>0.1</near><far>100</far></clip>
+          </camera>
+          <plugin filename="GstCameraPlugin" name="GstCameraPlugin">
+            <udp_host>127.0.0.1</udp_host>
+            <udp_port>5600</udp_port>
+            <use_basic_pipeline>true</use_basic_pipeline>
+            <use_cuda>false</use_cuda>
+          </plugin>
+        </sensor>
+      </link>
+    </model>
+  </world>
+</sdf>

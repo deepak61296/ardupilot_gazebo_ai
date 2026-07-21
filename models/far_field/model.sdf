@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<!-- The visible far ground: a 2000 m plane with a coarse farmland texture (~1 m/px), so the
+     horizon shows parcel/tree-line variation instead of a flat colour. The detailed grass tiles
+     sit above it; collision lives on the world's ground plane. Texture from gen_textures.py. -->
+<sdf version="1.9">
+  <model name="far_field">
+    <static>true</static>
+    <link name="link">
+      <visual name="v">
+        <geometry><plane><normal>0 0 1</normal><size>2000 2000</size></plane></geometry>
+        <material>
+          <diffuse>1 1 1 1</diffuse>
+          <specular>0.05 0.05 0.05 1</specular>
+          <pbr>
+            <metal>
+              <albedo_map>materials/textures/far_field.png</albedo_map>
+              <roughness>0.95</roughness>
+              <metalness>0.0</metalness>
+            </metal>
+          </pbr>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>
