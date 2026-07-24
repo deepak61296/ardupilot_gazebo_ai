@@ -11,16 +11,30 @@ Gazebo world — anything that speaks MAVLink can use it.
 
 That frame came off the drone's camera through mavlink-mcp, mid-flight, with no editing.
 
-Nothing is downloaded at launch. Every model here is local, so the sim starts offline and
-does not stall halfway through loading.
+Everything here is local except the walking person's animated mesh, which Gazebo pulls from
+Fuel once and then caches — so the sim starts offline and does not stall halfway through
+loading (on a first run with no network the person is simply invisible; nothing else is affected).
+
+## Status
+
+**Stable** — the static field (grass, trees, buildings, roads, marker, pad, boxes) and the
+walking person: flown and photographed through mavlink-mcp, and the person detects reliably in
+the sim (YOLOX ~0.87 from an oblique view).
+
+**Working, rough edges** — the moving red car laps correctly, but as a box composite it is weak
+for object detection at range (reads as truck/bench); a real car mesh is the fix.
+
+**Future** — a proper car mesh for the dynamic-chase demo, and more animated actors.
 
 ## What's in it
 
 `worlds/iris_field_vision.sdf` — a 1 km field: 144 grass tiles, 40 trees, 15 buildings,
-3 marked roads, 10 cars, 2 radio towers, 7 poles, 2 walls and a pond, over a far-field
-plane so the horizon isn't a flat colour. Targets to find: an ArUco marker, a landing pad
-and coloured boxes. The radio tower 30 m east of spawn is there on purpose as an obstacle
-for avoidance work.
+3 marked roads, 10 static cars, 2 radio towers, 7 poles, 2 walls and a pond, over a far-field
+plane so the horizon isn't a flat colour. Targets to find: an ArUco marker, a landing pad and
+coloured boxes. **Moving** targets for the follow demos: a person walking a 14 m line (COCO's
+strongest class — a real animated mesh) and a red car lapping a 10 m circle (driven by Gazebo's
+`VelocityControl`, no external publisher). The radio tower 30 m east of spawn is there on purpose
+as an obstacle for avoidance work.
 
 `worlds/camera_test.sdf` — a bare world for checking the video path works.
 
