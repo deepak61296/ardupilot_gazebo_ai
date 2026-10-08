@@ -6,7 +6,7 @@
 #
 #   bash scripts/sim_up.sh --check               # preflight only: report what's missing, don't launch
 #
-# Machine-specific bits are AUTO-DETECTED (gz path, NVIDIA EGL vendor file, X auth) and overridable
+# The machine-specific bits (gz path, NVIDIA EGL vendor file, X auth) are detected, and overridable
 # via env: ARDUPILOT_GAZEBO, ARDUPILOT_HOME, SIM_WORLD, GPU_ENV, DISPLAY.
 set -u
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
@@ -64,9 +64,9 @@ pkill -9 -f 'gz[ ]sim' 2>/dev/null || true
 pkill -9 -f 'arducopte[r]' 2>/dev/null || true
 sleep 2
 
-# Server and GUI MUST be separate processes: a combined `gz sim -r` does not render the camera
-# SENSOR (only the GUI view). Server renders sensors (headless EGL) + streams; GUI shows the window.
-echo ">> Gazebo SERVER (renders camera sensor, headless) -- detached"
+# Server and GUI have to be separate processes: a combined `gz sim -r` renders the GUI view but
+# not the camera sensor. The server renders sensors headless and streams; the GUI is just a window.
+echo ">> Gazebo server (renders the camera, headless), detached"
 # shellcheck disable=SC2086
 setsid env -i HOME="$HOME" PATH="$GZBIN:/usr/local/bin:/usr/bin:/bin" LANG=C.UTF-8 XDG_RUNTIME_DIR=/tmp/gzrt \
   $GPU_ENV \
@@ -76,7 +76,7 @@ setsid env -i HOME="$HOME" PATH="$GZBIN:/usr/local/bin:/usr/bin:/bin" LANG=C.UTF
 
 for _ in $(seq 1 60); do ss -lun 2>/dev/null | grep -q 9002 && break; sleep 1; done
 sleep 3
-echo ">> Gazebo GUI client on $DISP (a window should open; harmless if you have no display) -- detached"
+echo ">> Gazebo GUI on $DISP (fine if you have no display), detached"
 # shellcheck disable=SC2086
 setsid env -i HOME="$HOME" PATH="$GZBIN:/usr/local/bin:/usr/bin:/bin" LANG=C.UTF-8 \
   DISPLAY="$DISP" $XAUTH \
@@ -92,17 +92,12 @@ echo ">> enable camera stream (re-sent a few times so it sticks once the sensor 
   done ) &
 
 echo
-echo "================================================================"
-echo " Gazebo is up. In ANOTHER terminal start the MCP server:"
+echo "Gazebo is up. In another terminal start the MCP server:"
 echo
-echo "   mavlink-mcp --enable-actuation --camera gazebo"
+echo "  mavlink-mcp --enable-actuation --camera gazebo"
 echo
-echo " Then ask your agent:  take off to 20 m, point the camera down, fly 30 m north,"
-echo "                       take a photo and tell me what you see, then RTL"
-echo
-echo " (Give it ~30-60s for GPS/EKF before taking off.)"
-echo " THIS terminal runs SITL in the foreground -- keep it open. Ctrl-C stops SITL AND Gazebo."
-echo "================================================================"
+echo "then give GPS/EKF 30-60 s and ask your agent to take off, point the camera down, fly"
+echo "north and take a photo. SITL runs in this terminal; Ctrl-C stops it and Gazebo."
 echo
 
 # One clean shutdown: Ctrl-C (or any exit) stops SITL and tears down the detached Gazebo too.

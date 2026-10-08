@@ -49,10 +49,9 @@ so you don't have to run it.
 - **An NVIDIA GPU with the proprietary driver is recommended.** Without one Gazebo renders the
   camera in software (Mesa). That works, but the whole sim runs at roughly a third to half of
   real time.
-- **ArduPilot SITL, built.** Follow ArduPilot's
-  [SITL on Linux](https://ardupilot.org/dev/docs/setting-up-sitl-on-linux.html) guide, then
-  `./waf configure --board sitl && ./waf copter`. The scripts expect it at `~/ardupilot`.
-  In short:
+- **ArduPilot SITL, built**, at `~/ardupilot` (or set `ARDUPILOT_HOME`). The details are in
+  ArduPilot's [Linux setup guide](https://ardupilot.org/dev/docs/building-setup-linux.html);
+  on Ubuntu it comes down to:
 
   ```bash
   git clone --recurse-submodules https://github.com/ArduPilot/ardupilot.git ~/ardupilot

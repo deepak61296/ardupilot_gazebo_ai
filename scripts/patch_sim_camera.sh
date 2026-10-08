@@ -19,7 +19,7 @@ sed -i '/CameraZoomPlugin/,/<\/plugin>/d' "$GIMBAL"
 grep -q "CameraZoomPlugin" "$GIMBAL" && { echo "FAILED to remove CameraZoomPlugin"; exit 1; } \
   || echo "CameraZoomPlugin: removed (rendered FOV now matches the SDF)"
 
-# Publish the gimbal joints' ACTUAL positions. The mount slews slowly, so geo-tagging what the
+# Publish the gimbal joints' actual positions. The mount slews slowly, so geo-tagging what the
 # camera sees must read the real joint angles (the FC reports its target, not the gz joint).
 sed -i '/gz-sim-joint-state-publisher-system/,/<\/plugin>/d' "$GIMBAL"   # replace any old block
 sed -i 's#^\( *\)</model>#\1  <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">\n\1    <joint_name>roll_joint</joint_name>\n\1    <joint_name>pitch_joint</joint_name>\n\1    <joint_name>yaw_joint</joint_name>\n\1  </plugin>\n\1</model>#' "$GIMBAL"
