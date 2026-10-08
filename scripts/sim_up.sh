@@ -35,11 +35,11 @@ preflight() {
   local fail=0
   echo "-- preflight --"
   if [ -n "$GZ" ]; then echo "  ok   gz: $GZ ($("$GZ" sim --version 2>/dev/null | head -1))"
-  else echo "  FAIL gz not found -- install Gazebo Harmonic (scripts/bootstrap.sh)"; fail=1; fi
+  else echo "  FAIL gz not found -- install Gazebo Harmonic: https://gazebosim.org/docs/harmonic/install_ubuntu"; fail=1; fi
   if ls "$AGZ"/build/*ArduPilotPlugin* >/dev/null 2>&1; then echo "  ok   ardupilot_gazebo plugin: $AGZ/build"
   else echo "  FAIL ArduPilotPlugin not built at $AGZ/build -- run scripts/setup_plugin.sh"; fail=1; fi
   if [ -x "$AP/build/sitl/bin/arducopter" ]; then echo "  ok   SITL: $AP/build/sitl/bin/arducopter"
-  else echo "  FAIL arducopter not built at $AP -- set ARDUPILOT_HOME (see README)"; fail=1; fi
+  else echo "  FAIL arducopter not built at $AP -- build it (./waf copter) or set ARDUPILOT_HOME"; fail=1; fi
   [ -f "$WORLD" ] && echo "  ok   world: $WORLD" || { echo "  FAIL world not found: $WORLD"; fail=1; }
   # graphics: warn (not fatal -- headless server still runs, just camera/GUI may not)
   if [ "$have_nv" = 1 ] && [ -n "$GPU_ENV" ]; then echo "  ok   NVIDIA render: EGL=${EGL_JSON:-<GPU_ENV override>}"
@@ -108,6 +108,14 @@ echo
 # One clean shutdown: Ctrl-C (or any exit) stops SITL and tears down the detached Gazebo too.
 cleanup() { echo; echo ">> stopping SITL + Gazebo"; pkill -9 -f 'gz[ ]sim' 2>/dev/null || true; }
 trap cleanup EXIT INT TERM
+
+# SITL does not boot until something connects to its TCP port. If the agent is that first
+# connection, it talks to a vehicle that is still booting, misses SIMSTATE, and refuses to
+# fly it as a "real aircraft". So knock once ourselves; the agent then finds it booted.
+( for _ in $(seq 1 30); do
+    sleep 1
+    ( exec 3<>/dev/tcp/127.0.0.1/5760 && sleep 3 ) 2>/dev/null && break
+  done ) &
 
 echo ">> ArduPilot SITL (Gazebo physics) -- foreground, keep this terminal open"
 cd "$AP"

@@ -14,9 +14,8 @@ AGZ="${ARDUPILOT_GAZEBO:-$HOME/ardupilot_gazebo}"
 UPSTREAM="https://github.com/ArduPilot/ardupilot_gazebo.git"
 
 command -v gz >/dev/null 2>&1 || {
-  echo "Gazebo not found. On Ubuntu 22.04:"
-  echo "  sudo apt install curl lsb-release gnupg"
-  echo "  # then follow https://gazebosim.org/docs/harmonic/install_ubuntu"
+  echo "Gazebo not found. Install Gazebo Harmonic:"
+  echo "  https://gazebosim.org/docs/harmonic/install_ubuntu"
   exit 1
 }
 
@@ -31,8 +30,13 @@ if ! ls "$AGZ"/build/*ArduPilotPlugin* >/dev/null 2>&1; then
   echo ">> building the plugin (needs libgz-sim8-dev, rapidjson-dev, gstreamer plugins)"
   mkdir -p "$AGZ/build"
   cd "$AGZ/build"
-  cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo
-  make -j"$(nproc)"
+  cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo && make -j"$(nproc)" || {
+    echo
+    echo "build failed. Most likely a missing dependency; on Ubuntu:"
+    echo "  sudo apt install libgz-sim8-dev rapidjson-dev libopencv-dev libgstreamer1.0-dev \\"
+    echo "    libgstreamer-plugins-base1.0-dev gstreamer1.0-plugins-bad gstreamer1.0-libav gstreamer1.0-gl"
+    exit 1
+  }
 else
   echo ">> already built: $AGZ/build"
 fi
