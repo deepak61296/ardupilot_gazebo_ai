@@ -35,7 +35,7 @@ preflight() {
   local fail=0
   echo "-- preflight --"
   if [ -n "$GZ" ]; then echo "  ok   gz: $GZ ($("$GZ" sim --version 2>/dev/null | head -1))"
-  else echo "  FAIL gz not found -- install Gazebo Harmonic: https://gazebosim.org/docs/harmonic/install_ubuntu"; fail=1; fi
+  else echo "  FAIL gz not found -- run scripts/install_deps.sh"; fail=1; fi
   if ls "$AGZ"/build/*ArduPilotPlugin* >/dev/null 2>&1; then echo "  ok   ardupilot_gazebo plugin: $AGZ/build"
   else echo "  FAIL ArduPilotPlugin not built at $AGZ/build -- run scripts/setup_plugin.sh"; fail=1; fi
   if [ -x "$AP/build/sitl/bin/arducopter" ]; then echo "  ok   SITL: $AP/build/sitl/bin/arducopter"
@@ -43,7 +43,7 @@ preflight() {
   [ -f "$WORLD" ] && echo "  ok   world: $WORLD" || { echo "  FAIL world not found: $WORLD"; fail=1; }
   # graphics: warn (not fatal -- headless server still runs, just camera/GUI may not)
   if [ "$have_nv" = 1 ] && [ -n "$GPU_ENV" ]; then echo "  ok   NVIDIA render: EGL=${EGL_JSON:-<GPU_ENV override>}"
-  else echo "  WARN no NVIDIA EGL detected -> HEADLESS CAMERA will render BLACK (software fallback)."
+  else echo "  WARN no NVIDIA EGL detected -> software rendering: the camera works but the sim runs slow."
        echo "       install the NVIDIA driver, or set GPU_ENV=... if your files live elsewhere."; fi
   if [ -n "$XAUTH" ] || xset q >/dev/null 2>&1; then echo "  ok   display: $DISP (GUI window will open)"
   else echo "  WARN no reachable X display ($DISP) -> no GUI window; the headless server + agent still work."; fi

@@ -14,8 +14,8 @@ AGZ="${ARDUPILOT_GAZEBO:-$HOME/ardupilot_gazebo}"
 UPSTREAM="https://github.com/ArduPilot/ardupilot_gazebo.git"
 
 command -v gz >/dev/null 2>&1 || {
-  echo "Gazebo not found. Install Gazebo Harmonic:"
-  echo "  https://gazebosim.org/docs/harmonic/install_ubuntu"
+  echo "Gazebo not found. Install it and the build deps first:"
+  echo "  bash scripts/install_deps.sh"
   exit 1
 }
 
@@ -32,9 +32,7 @@ if ! ls "$AGZ"/build/*ArduPilotPlugin* >/dev/null 2>&1; then
   cd "$AGZ/build"
   cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo && make -j"$(nproc)" || {
     echo
-    echo "build failed. Most likely a missing dependency; on Ubuntu:"
-    echo "  sudo apt install libgz-sim8-dev rapidjson-dev libopencv-dev libgstreamer1.0-dev \\"
-    echo "    libgstreamer-plugins-base1.0-dev gstreamer1.0-plugins-bad gstreamer1.0-libav gstreamer1.0-gl"
+    echo "build failed. Most likely a missing dependency; run: bash scripts/install_deps.sh"
     exit 1
   }
 else

@@ -45,20 +45,21 @@ so you don't have to run it.
 ## Requirements
 
 - **Ubuntu 22.04** (what this is tested on; 24.04 should work but is untested).
-- **Gazebo Harmonic** (`gz sim` 8.x), from the
-  [official install guide](https://gazebosim.org/docs/harmonic/install_ubuntu).
-- **An NVIDIA GPU with the proprietary driver.** The camera sensor renders in a headless
-  Gazebo server through EGL; without a GPU the frames come out black. Flying and telemetry
-  work without one.
+- **Gazebo Harmonic** (`gz sim` 8.x). `scripts/install_deps.sh` installs it (see Setup).
+- **An NVIDIA GPU with the proprietary driver is recommended.** Without one Gazebo renders the
+  camera in software (Mesa). That works, but the whole sim runs at roughly a third to half of
+  real time.
 - **ArduPilot SITL, built.** Follow ArduPilot's
   [SITL on Linux](https://ardupilot.org/dev/docs/setting-up-sitl-on-linux.html) guide, then
   `./waf configure --board sitl && ./waf copter`. The scripts expect it at `~/ardupilot`.
-- **Build dependencies for ArduPilot's Gazebo plugin:**
+  In short:
 
   ```bash
-  sudo apt install libgz-sim8-dev rapidjson-dev libopencv-dev \
-    libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
-    gstreamer1.0-plugins-bad gstreamer1.0-libav gstreamer1.0-gl
+  git clone --recurse-submodules https://github.com/ArduPilot/ardupilot.git ~/ardupilot
+  cd ~/ardupilot
+  Tools/environment_install/install-prereqs-ubuntu.sh -y
+  . ~/.profile
+  ./waf configure --board sitl && ./waf copter
   ```
 
 ## Setup
@@ -66,8 +67,20 @@ so you don't have to run it.
 ```bash
 git clone https://github.com/deepak61296/ardupilot_gazebo_ai.git
 cd ardupilot_gazebo_ai
+bash scripts/install_deps.sh     # apt: Gazebo Harmonic, plugin build deps, OpenCV with GStreamer
 bash scripts/setup_plugin.sh     # clones + builds ardupilot_gazebo, patches its camera
 bash scripts/sim_up.sh --check   # tells you what's still missing
+```
+
+`install_deps.sh` uses sudo and only touches apt (it adds Gazebo's official apt repo, as the
+[Gazebo install guide](https://gazebosim.org/docs/harmonic/install_ubuntu) does). If you would
+rather do it by hand, it amounts to `gz-harmonic` plus:
+
+```bash
+sudo apt install libgz-sim8-dev rapidjson-dev libopencv-dev \
+  libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+  gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly \
+  gstreamer1.0-libav gstreamer1.0-gl gstreamer1.0-tools python3-opencv
 ```
 
 `setup_plugin.sh` does not vendor the plugin; it clones upstream into `~/ardupilot_gazebo`
@@ -116,17 +129,20 @@ Video is H.264 on `udp://127.0.0.1:5600`. Gazebo does not stream until something
 to; `sim_up.sh` publishes the enable topic for you.
 
 To read that stream in Python you need OpenCV built with GStreamer. The `opencv-python`
-wheel is not (`GStreamer: NO`), so use Ubuntu's `python3-opencv`, and pin `numpy<2` with
-it, since that build is compiled against NumPy 1.x. A plain venv can't see the apt
-package, so create the venv with access to system packages:
+wheel is not (`GStreamer: NO`), so use Ubuntu's `python3-opencv`, with `numpy<2`, since
+that build is compiled against NumPy 1.x. The simplest reliable way is a plain venv with
+just the apt `cv2` module linked into it:
 
 ```bash
-sudo apt install python3-opencv
-python3 -m venv --system-site-packages .venv && source .venv/bin/activate
-pip install -U pip                 # Ubuntu 22.04's pip 22.0 can't build packages in this kind of venv
-pip install mavlink-mcp            # not mavlink-mcp[camera]: that pulls the wheel back in
-python -c "import cv2; print(cv2.__file__)"   # should be under /usr/lib/python3/dist-packages
+sudo apt install python3-opencv    # already done if you ran install_deps.sh
+python3 -m venv .venv && source .venv/bin/activate
+pip install mavlink-mcp "numpy<2"  # not mavlink-mcp[camera]: that is the wheel
+ln -s /usr/lib/python3/dist-packages/cv2*.so "$(python -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')/"
+python -c "from mavlink_mcp.camera import gstreamer_missing as g; print(g() or 'camera OK')"
 ```
+
+Why not `--system-site-packages`? That venv also sees `~/.local`, and ArduPilot's
+`install-prereqs-ubuntu.sh` puts the `opencv-python` wheel there, which then hides the apt one.
 
 ## Gotchas
 
